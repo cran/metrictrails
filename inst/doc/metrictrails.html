@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>From a GPX file to research-grade trail measures</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">From a GPX file to research-grade trail
+measures</h1>
+
+
+
+<p>This vignette walks through the metrictrails pipeline with the files
+shipped in the package: a trail run on Manquehue hill (Santiago, Chile)
+recorded by a GNSS watch, the same loop drawn as a route, and a small
+Digital Elevation Model (DEM) of the area.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(metrictrails)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>activity_file <span class="ot">=</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;gpx_activity.gpx&quot;</span>, <span class="at">package =</span> <span class="st">&quot;metrictrails&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>route_file <span class="ot">=</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;gpx_route.gpx&quot;</span>, <span class="at">package =</span> <span class="st">&quot;metrictrails&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>dem_file <span class="ot">=</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;test_dem.tif&quot;</span>, <span class="at">package =</span> <span class="st">&quot;metrictrails&quot;</span>)</span></code></pre></div>
+<p>The pipeline has five steps:</p>
+<ol style="list-style-type: decimal">
+<li><strong>ingest</strong> a GPX file, <code>read_stream()</code>;</li>
+<li>apply the <strong>naming convention</strong>,
+<code>uniform_stream()</code>;</li>
+<li><strong>sanitize</strong> the coordinates,
+<code>sanitize_stream()</code>;</li>
+<li><strong>resample</strong> to a uniform spatial resolution,
+<code>resample_stream()</code>;</li>
+<li>replace the <strong>elevation</strong> with values from a DEM,
+<code>ele_correction()</code>.</li>
+</ol>
+<div id="ingest" class="section level2">
+<h2>1. Ingest</h2>
+<p><code>read_stream()</code> reads the track points of a GPX file with
+sf. Every track segment becomes a value of <code>segment</code>, and
+Garmin point extensions (heart rate, cadence, temperature) become
+numeric columns.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>raw <span class="ot">=</span> <span class="fu">read_stream</span>(activity_file)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>raw</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2,510 × 8</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;      lon   lat   ele timestamp           segment atemp    hr   cad</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dttm&gt;                &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;  1 -70.6 -33.4  772  2020-08-10 19:36:38       1    27   106    47</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  2 -70.6 -33.4  771  2020-08-10 19:36:39       1    27   108    47</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;  3 -70.6 -33.4  772. 2020-08-10 19:36:42       1    27   111    76</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;  4 -70.6 -33.4  771. 2020-08-10 19:36:43       1    27   114    76</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;  5 -70.6 -33.4  771. 2020-08-10 19:36:44       1    27   117    77</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;  6 -70.6 -33.4  771. 2020-08-10 19:36:47       1    27   121    79</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt;  7 -70.6 -33.4  771. 2020-08-10 19:36:49       1    27   125    79</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt;  8 -70.6 -33.4  771. 2020-08-10 19:36:50       1    27   127    79</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt;  9 -70.6 -33.4  772. 2020-08-10 19:36:53       1    27   130    79</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; 10 -70.6 -33.4  772. 2020-08-10 19:36:56       1    27   133    80</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; # ℹ 2,500 more rows</span></span></code></pre></div>
+</div>
+<div id="naming-convention" class="section level2">
+<h2>2. Naming convention</h2>
+<p><code>uniform_stream()</code> renames the columns to
+<code>lon</code>, <code>lat</code>, <code>ele</code>,
+<code>timestamp</code> and <code>time</code> (seconds since the start).
+It also works on data frames from other sources, such as the Strava API
+streams in <code>strava_streams</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>raw <span class="ot">=</span> <span class="fu">uniform_stream</span>(raw)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">names</span>(raw)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;lon&quot;       &quot;lat&quot;       &quot;ele&quot;       &quot;timestamp&quot; &quot;time&quot;      &quot;segment&quot;  </span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; [7] &quot;atemp&quot;     &quot;hr&quot;        &quot;cad&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">uniform_stream</span>(strava_streams), <span class="dv">3</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 13</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;     lon   lat   ele  time cadence distance grade_smooth heartrate moving  temp</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;int&gt;    &lt;dbl&gt;        &lt;dbl&gt;     &lt;int&gt; &lt;lgl&gt;  &lt;int&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 1 -70.6 -33.4 1052.     0      NA   0              10.7        NA FALSE     NA</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 2 -70.6 -33.4 1053.    10      NA   0.0079          7.5        NA TRUE      NA</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; 3 -70.6 -33.4 1054.    20      NA   0.0112          3.1        NA FALSE     NA</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: velocity_smooth &lt;dbl&gt;, id &lt;dbl&gt;, type &lt;chr&gt;</span></span></code></pre></div>
+</div>
+<div id="sanitize" class="section level2">
+<h2>3. Sanitize</h2>
+<p><code>sanitize_stream()</code> first flags readings that are
+physically implausible: speed, acceleration, jumps at the edges, slope,
+vertical speed, and elevation changes while the athlete stands still.
+Then it smooths <code>lon</code> and <code>lat</code>. The default
+method is a constant-velocity Kalman filter with a Rauch-Tung-Striebel
+smoother; LOESS, a Gaussian kernel, Savitzky-Golay and the full
+post-processing pipeline of Martinez, Sanchez &amp; Diaz (2026) are also
+available.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>clean <span class="ot">=</span> <span class="fu">sanitize_stream</span>(raw)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">attr</span>(clean, <span class="st">&quot;sanitize_report&quot;</span>)<span class="sc">$</span>counts</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;       flag_time      flag_speed      flag_accel       flag_jump      flag_slope </span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;               0               0               0               0              71 </span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; flag_vert_speed   flag_idle_ele        flag_gap    flag_low_res </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;               3               3               0              10</span></span></code></pre></div>
+<p>The flags are computed on the raw readings, before smoothing. In this
+activity the positions raise no flags. The flags concern the raw
+elevation: slopes above 50 degrees between close readings, implausible
+vertical speeds, and elevation changes while standing still. Flagged
+readings can be kept (<code>action = &quot;flag&quot;</code>, the default),
+dropped or interpolated.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>methods <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;kalman&quot;</span>, <span class="st">&quot;loess&quot;</span>, <span class="st">&quot;gaussian&quot;</span>, <span class="st">&quot;savgol&quot;</span>, <span class="st">&quot;pipeline&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>lengths <span class="ot">=</span> <span class="fu">sapply</span>(methods, <span class="cf">function</span>(m) {</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">summarise_stream</span>(<span class="fu">sanitize_stream</span>(raw, <span class="at">method =</span> m))<span class="sc">$</span>distance_2d</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>})</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">c</span>(<span class="at">raw =</span> <span class="fu">summarise_stream</span>(raw)<span class="sc">$</span>distance_2d, lengths))</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;      raw   kalman    loess gaussian   savgol pipeline </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;     7847     7452     6253     6686     7454     7523</span></span></code></pre></div>
+<p>Every method removes part of the positional noise, which shortens the
+path. LOESS with its default span smooths the most.</p>
+</div>
+<div id="resample-the-nyquist-resolution" class="section level2">
+<h2>4. Resample: the Nyquist resolution</h2>
+<p>A watch that records every second produces a spatial resolution that
+is a random variable: the distance between readings is the speed times
+the sampling interval. Because trails are fractal, distance and
+elevation gain depend on that resolution (Sanchez et al., 2025), so two
+recordings of the same trail are not directly comparable.</p>
+<p><code>resolution_stream()</code> describes the distribution of the
+horizontal distance between moving readings:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">resolution_stream</span>(clean)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 12</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;       n pct_idle  mean    sd   q05   q25   q50   q75   q95   max     q   res</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 1  2510   0.0797  2.97  3.07 0.512  1.08  2.00  3.49  9.10  22.8   0.9  6.31</span></span></code></pre></div>
+<p>Its 0.9 quantile, <code>res</code>, is the finest uniform spacing
+that represents the path without inventing readings between sparse
+fixes. <code>resample_stream()</code> uses it by default:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>resampled <span class="ot">=</span> <span class="fu">resample_stream</span>(clean)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">attr</span>(resampled, <span class="st">&quot;res&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 6.306554</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">nrow</span>(resampled)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [1] 1182</span></span></code></pre></div>
+<p>The fractal effect is easy to see by resampling the same stream at
+increasing resolutions:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">8</span>, <span class="dv">13</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">50</span>, <span class="dv">80</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>distance <span class="ot">=</span> <span class="fu">sapply</span>(res, <span class="cf">function</span>(r) <span class="fu">summarise_stream</span>(<span class="fu">resample_stream</span>(clean, <span class="at">res =</span> r))<span class="sc">$</span>distance_2d)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">plot</span>(res, distance <span class="sc">/</span> <span class="dv">1000</span>, <span class="at">log =</span> <span class="st">&quot;x&quot;</span>, <span class="at">type =</span> <span class="st">&quot;b&quot;</span>, <span class="at">pch =</span> <span class="dv">19</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Resolution (m, log scale)&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Distance (km)&quot;</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="fu">attr</span>(resampled, <span class="st">&quot;res&quot;</span>), <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>To compare several streams, resample all of them with one common
+resolution, at least the largest of their Nyquist resolutions:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>streams <span class="ot">=</span> <span class="fu">list</span>(<span class="at">activity =</span> clean, <span class="at">route =</span> <span class="fu">read_stream</span>(route_file))</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">resolution_stream</span>(streams)[, <span class="fu">c</span>(<span class="st">&quot;stream&quot;</span>, <span class="st">&quot;q50&quot;</span>, <span class="st">&quot;res&quot;</span>)]</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;   stream     q50   res</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;    &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 1 activity  2.00  6.31</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 2 route    13.0  37.2</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>common <span class="ot">=</span> <span class="fu">max</span>(<span class="fu">resolution_stream</span>(streams)<span class="sc">$</span>res)</span></code></pre></div>
+<p>The route was drawn with sparse vertices, so it sets the common
+resolution.</p>
+<p><code>fractal_stream()</code> summarises the same behaviour as a
+fractal dimension (divider method):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>fd <span class="ot">=</span> <span class="fu">fractal_stream</span>(clean)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>fd<span class="sc">$</span>dimension</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; [1] 1.073242</span></span></code></pre></div>
+</div>
+<div id="elevation-from-a-dem" class="section level2">
+<h2>5. Elevation from a DEM</h2>
+<p>Raw elevation comes from a barometer or from GNSS, and it is noisy
+and often rounded to the metre. <code>ele_correction()</code> replaces
+it with values from a DEM. Without a <code>dem</code> argument,
+<code>get_dem()</code> downloads AWS Terrain Tiles at zoom 14 along a
+corridor around the stream. Here we use the DEM shipped with the
+package:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>final <span class="ot">=</span> <span class="fu">ele_correction</span>(resampled, <span class="at">dem =</span> dem_file)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># same result with a downloaded DEM, refined to 1 m by bilinear interpolation</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>dem <span class="ot">=</span> <span class="fu">get_dem</span>(resampled, <span class="at">res =</span> <span class="dv">1</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>final <span class="ot">=</span> <span class="fu">ele_correction</span>(resampled, <span class="at">dem =</span> dem)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>d_raw <span class="ot">=</span> <span class="fu">differential_stream</span>(raw)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>d_final <span class="ot">=</span> <span class="fu">differential_stream</span>(final)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="fu">plot</span>(d_raw<span class="sc">$</span>distance <span class="sc">/</span> <span class="dv">1000</span>, raw<span class="sc">$</span>ele, <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">col =</span> <span class="st">&quot;grey60&quot;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Distance (km)&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Elevation (m)&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="fu">lines</span>(d_final<span class="sc">$</span>distance <span class="sc">/</span> <span class="dv">1000</span>, final<span class="sc">$</span>ele, <span class="at">lwd =</span> <span class="fl">1.5</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;device&quot;</span>, <span class="st">&quot;pipeline + DEM&quot;</span>), <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;grey60&quot;</span>, <span class="st">&quot;black&quot;</span>), <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAGACAMAAABFpiBcAAAAeFBMVEUAAAAAADoAAGYAOpAAZmYAZrY6AAA6ADo6AGY6Ojo6kNtmAABmADpmAGZmZgBmZmZmkJBmtrZmtv+QOgCQOjqQZgCQkGaQtpCQ27aQ2/+ZmZm2ZgC225C2/7a2/9u2///bkDrb/7bb////tmb/25D//7b//9v///9jNX8QAAAACXBIWXMAAA7DAAAOwwHHb6hkAAATw0lEQVR4nO2diXbbuBVA6XGtpFamnYk7nTpqG9WSrP//wxLgIoriAoAA8QDee05syaJIkLx5WIiluAIIpoidAIApEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0dgJ+vlWaH75GSg5APdYCXosXqsXp+bFw+4AjAgh6Odbq+Xx+WPx7mDDBBH0sv/evDyNZPIICkYQQUE0QQQty6B1CB0vg9rsDrZLGEHLTL4q4Y7ETwQFQwIJuvbuIFcQFEQTSNDZhvr8BP2hiJ2I/AhVSZptqLfZXQpoOXHUOzQzufHwkKMV8weh1Cc01Duh5exK2lMSQX1BBHXhlvra0H7IJIT6goZ6B7qJr4Log48Y6gka6u3ppb00dEBHDPUD7aDWPPQAK4ohGfMV9PT03v9Tp9bhmZUFte/mJ46BpA+eTr4hdEDQcAQS9FBW3s+7ohg9lYQFffhLqeLQ6WRraAaCaj+/vE+E/mQFfQyWWsStGHosg84/laDli7ICfN6p+3t6+pe+z+pvL9fmMz8Eagctk3dQSc2umWkgM9caDp5PGob+mOR+WxV5TipfPJb/zrvXzzd1lw/P/1OCqr+pW19/5id1wRrq67bQzBrqx/wc+uCaX0WpCpiHp3cdgtTNPZb3t3yj7nj1tzo8jd54WwJl8eX/q2OOEXTMz6RDqDmVdWUZtCqGlr4qM09K2O+1vU0RtXm3lDCCXva//NQhdLQ8nYugNwW3YOixFbRui/muYtHh+UML+qW617fPfBCqmalO5Yun3Qlhws+RM8rL0F4Erf70H5299yOoL2iot2DKz7EzysrQysFjlaVXXPZ/18XQbhnUZ6M9glrQT/S9fGOGBkpMFFQFva3Fq9pS+UNlk5emFq+q9bfPPICgFvQS3QuOY6eUl6HddtAqw1eFzctDO6ivSY8Q1JyHADrzebNZVoauTaB20Nsz94zaQfsB9OFzDPVPmAj6+TYX4RMUdDqD11tgqHeCjeocbWBy2Z0EevYNSreJYui6hGsHnW5rSFDQ+7eDzo0KiqGuUEkypRdATTbqbI6hjiCoGSYZ/HXitBDUEQQ1wySDv45Xk3IzdPhpUflXw8dIh87j+vp18fzx+VZ3Iz3dBrMhqBHzNfh2yw3X5M0fch60gOfdS/taUQpavT4gqCWGAVRvul1DbQWt+pV0Bf3LN/WA9PLr3xDUin4J1Gbj27fSN/T85c+dHs1Rda+r37RjPOos/rL/fV9l3/djP5r+eNdWSt0a2RX05aA7Oz//gaA2GNaQRjY3/p58zrvSO9WCWHWvq9+0YzxaQeveJL2xH4+C6t93gp7Um8PrAUEtmHsGP/uF9osiDbVYBaay7Vh3UL69qcd4tIK+1r3t78d+DAiqekA3laRXJej568/r5ds7glrQD4jzlmVblW8GcXaGePTGf1zq3svqx93YDzUI/dbP/k7QbgT9fCuj8vMHglpgVQCtvjH6SeKGVjGwEbR5047x6AvaG/thksWroWxlORRBjXmInyaOjYfQtA0dEbTpmzwYQfvf1oxWkq7nr//9xzuCGlP0H3EaGTYRQpM2tCp2Hrpl0PqNpidov9XpUdCHZqaX8t9vX38iqDEu8XPy7JI29LzTQz6aWnz9ph3j0RN0YuxH01D/eu0LWg0hQVBTrCtIg19z2YVEzrvfdkUzxKN9047x6As6PvZj6FHn07sWVCuPoIbcJdNi7vmp00vY0LvZGHxNzTANgk7SE9Ttez0SzuQRVBh3VXgrsfI0FEGF4ezn9PklK2gEEHSKTiptw16eIXR9EHSCuwBq+91M60lrg6ATLBGUTN4PCDqOewm0+vpUEMVQQxB0nEUBVO8g10eeK4Kgoyz2M99HniuCoKMsqMK3uyCTXwqCjuHBT0LochwE9TIHuXhBO8FviUoYuhBbQS/7Zt75z7clk5RKF9RDAfRhP30w1ABLQS+/dp28f2e0l1TW6vSSwfd29ACGzkMZdBBfAZT2+qUg6BALm+jv90UxdAkOgjYTfC+aJj8ZQZc7RCa/BHtBP99GVjcMc9wY+MvgH3bXB0NnsBfUzzpNkgUtvAbQa7YDQFbBJYL6WGhZtKCd1178oRjqjkMZtDO8eYXjro93P8nkF+Ai6C7vSpLvDL63zwcwdAqXLH5mhRm/x12drp8hdvoIhk5AJamPn2fw43sdAEHHoZLU41ah8RrYpocoYegoVJJ6hPHzSjHUEZcsfnqZWM/HXZlOBh9u149g6Bg8i78jUAZf7XvqQwwdAUHvCOgnFSUnVu4Pan/cVWkDaJCARgh1gB71XW4BNOzuh8DQQRiT1CVoAJ07aQQdgjJoh8ABdLoxlBA6CIJ2aANosANgqC0IeiNwBt89xDAI+giCtjThLWggI4RagqAtwTP4u6MMg6J9ELRhlQA6Vwwll+/jIOjnW5bP4tfxc/bMMfQeB0EPi8y0Pe5arJPBd480Arn8HS69mXLsD7pCDf7hWCMgaJdAPepniwFiBV3jWBhqTpgxSceijrKnYiTcChN0zQB6JYZa4PQsfi6EdkaFHEemIZEl6Mp+Yqg5QXrUd0oBp5GtRAm6up+0NhkTpB00tQhaJcZ8LWMvx+SZkhFhGuqPTSkghTKoUuWHxVLbHg87DobWuAiqpxZ5mhza2ZQDRifCkyNoYbMOvNcDY6gBTpUkFRWPeXRYLoo4dlYHn/oQQzXuEzeMlS49HzcYdVUvpgczU/Wj6HVJQ/1Y/Vwjv6G+qRhFTsX0gp6xkyeAMBFUfkN97WfkVChmJsWRkMSYBCmDym9mkhE/a1B0giC1ePEN9VoJQXd+riwqJ6Wrs8mG+rrlM2YSesw9WJKV2jXZYEN9UfkZLwGDzC2+t1VFAw35ENtQX1ebRd5tFB3AUtDL/jXp6RfrOCX1Vs8sYrpFRVceNBd5MdlCVO19ENru73FoqP9W1d8nG+qPzdxNR1G1ePl+XhmYfI+7oGPq6c+e3svSwMvEVlEEbQZuxji2BRjawVbQwy2THh87VzUz6UU9JQmaiJ/zY5bEn4FH3CPoBE1D/eH5Q56gKdxeFG0J21B/eBEkaCoBVDFXjdyOoQ6CGqwX32hZbipN0GRu7ezjz1ROZBkuM4uUGffL9byb6rDcPEr6fBMn6PoHdmU+o0/oZFxxm1nkpKo/iXVYTs5Pg4u0AUXdOiyfv/7U/1Y4rjdEP0IaweAqJXZG1rh1WFY1+cQETTCAXue7kCjyVtShDKpqQIfX1LL4FAOoZl7RFM/KGJdmpsPLRPVc0fYnGa/rry1osn5eTcJomudlRJjOIqOVd7fdLSfNDL5lPoiukYooBOrNNDsF3rqCyu5kZ8B2Y6hLLX5++sX5KfBWFTSxJvohNhtDXRrqZye+8XlcD8jtQ2/BVqtKblm8Xq7TJJAuP+5yctDzWvf1ntwig5N8xLkMOl8P8nPcpcgbwbkAg4ef2ZxrzYIIumgthZUErWtH6xxsBcwa7nOS1OVJUjpl0CxKnz3MxnNlc9KhavHejrv4KLncqRtGiuYSRVce1Rlqd6MHyeU+3bOhIOoi6GVfPH8cli3ntYagRVaFsTu2Y6iDoKen9+Pzx8IF51YQNOrctKExzObDJyQ0bt3tjhPjNT0f1/0IOdyeKcwq9CskJChuHZaVoJMTN/g7ruv+s/fTLJ9P/iq4R9CD6P6gG/DTtCQaPBlBcS6Dyl7lYxN+Xs0uY9pXwrEWv7ipPqCg1eId4fYviuyHhGTXDpp8109Lcjc0P0HVj6RviSWZV5UyFTTU3kWSdaO9paAGw+E8H9dhv8neDFeMLmaiFyWzCFrk2T1kDjNDk/yPm5ug1w0G0GvdcpHlqBDrLH52iS7Px7Xea4p3wQ8mhiZ3cVwErab/FCjotv00rdCndYFyElTkAl2rkmEvvKwETe3i+ye/XngZCbrNCnwfw2F1K6TED/kIuvUCaEteimYlaDJXPTCGlaUkrlY2ghbk7zcM15pMQdGVH3UGW6uz3GEKl3s9zK6w/GuWy5MkAmgfU0OFX7ZMBMXPR0wvsWxF8xAUP4cwLUn9+NFOOiav6pSLoNKuqxBKQ2tJZxau0z8aR8Ony5wsBMXPcZSiXVENEHUxcxAUP6eps3qLlhNB1zMDQbcwR8MyGjVTNDQHQakgmWLRAi1F0fQFJYO3w/Q5iZDKUgaCyriQaZGOoskLip9uGAVS3Swad8771AXdziQ3ITCStPoZ6zInLygBdCmyu5UkLih+esCwYh8no09a0A3NYhcU07anGIqmLCh+esO859PaVzxhQRnj4ZHiatqVfGVH0xUUP73SdHoyKJK2iq5x/dMW1ENC4IH5MNp2IA0fTlMVVI9BQtBQ2DyzD3sXkhWU+Bkaq24lP/p4S4X3DVfZHQXQFbBofXq4F948TVNQuoCuRDGoqVXX54U3KlFB8XMltJ6to21LlMXtW6hokoLi5+r0m0it5t5YcrsSFdRXMsCYJRn9gjCKoOCMnaKOx/C+Yfjd4acYrDJ6tyN43zD47vBTEhaFUacgiqCwlKAjRdMTFD/lETCGBhL0821mDlFnQb3PLAoeCNefNIygx+K1enFqXizaXfd7BFCRBJv4KYig1RzhmuPzx+Lddb9G/BRKqKpSEEENFkx0E434KZgwQTSpCIqfogkSREOVQesQ6rcMyjN42YRobwpUi29WAxmJn26CEkDFY57Ne9+jgHZQAqh8zLN50x0aH9l0w2C7Yx7QFPBtaEIN9WTwSWD8cN6s0T6dhnoy+HQwVtRgV8bHNN3wGqaZCT9Twl8QXbmh3nmtTmrwaeFtWH0iERQ/U8PiudLkrU2joR4/08PTwmFJNNTTwJQiNl3txyd5SKEdlPiZKHZVjWFF5QvKLCIJc5vxwXkP3jfUHIriRTfWfx/ZYHB3bfX+h3qhvSzwM2kcG206O/C+oULV3Q/FiyqL2lSSdEmkOqHSyvIHem6ecM1Mp6f367JmpiX/8SATwjXUV030fnvUw+aQHEEBQpdBO8+UFuwOtouoWjxAH/ntoLBpEBREE01QACMiCRrtGNJTICAJ8VPgNmQtPPGvTPwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BQgqNwUCEhC/BRIFRTAGQQF0SAoiAZBQTQICqJBUBANgoJoEBREg6AgGgQF0SAoiAZBQTQICqIJLuipKPRsTtHQM6GMzNSzIofRadNX4bwr1JxFMTkW4zPSjBNaUDXX2CmmoZ9v5dGPsW9O+f80qqCn8uiXfdSLcFQm2BsaWNBqlrFDxCtz3qlrchxdvHEdLvuogla3IepF+HxTEtibEFhQGXpc4wbxq5oX8I+Ygp6/xD39q1xB9ZUZm+52PQ5xU1Behqhl0NMv/9nHLojLzOKryBU7fo0vPLYOKoeNKuhRrU9dxbB4uFWXNyHoKXIdSU/8G1XQp/gZmcrEzjvrQLGFLD5y/KwuQlxB9Q2oKgSRcK2NbKCSdIzdCnqsZxyMp0cVIaJWlVzz0uybmW4r4MYlagStFlKPmpFVoco+Cdk31DsUe4IQ90mSKgWPrnyxDjLLoDp/i1pFqvPX2O0IsR91nuI/7z04JYHOIiAaBAXRICiIBkFBNAgKokFQEA2CgmgQFESDoCAaBAXRICiIBkFBNAgKokFQEA2CgmgQFESDoCAaBAXRICiIBkFBNAgKokFQEA2CgmgQFESDoCAaBAXRICiIBkHtOdxmU6ymjas5mU+j9/n2/bIfmKjo8i32HFLSQFB7qnnAzrvepJJ3ss5wfLkOCqrXi4EOCGpPPVFdf1ZJC0HVpsOClqF1WeJyA0HtqQVVixJoKdUqbsV39VPNRV9l/pf97/uqFKDmf3ypfzdKqnlctaDH4vW8U1u+qq/rzQmhdyCoPc1Un+VvJaieO/hUfNeyqsmk1ZIFl71a4K7+p1xUv9v5W9VWtz/qpfBKZfVM6bEXnJAGgtrTCFoKpaRsprXW+baq5ChjdXwsXzQZefW73lS/KX/o2cm1tfWP75FXOhAIgtrTE/Syb7Sr1DqpvFq/KX80vlWBsX5Xf/hXneXftNQ/houm2wVB7ell8dV6yrWTZUnzl3/vOoLWK2ucuit91CY+/fnlHUFnQFB7+pUk/ben97Y8et6NRdCa+sNq+TkEnQRB7ek0M7WCli/a8uipk8XfyqCdomVTBtVK9gSlDHoPgtrTNNS/Vt7p4HhSEfS1Dp5l2bIRVFfUVazVqxEe6jja1OLV2iw9N6nF34Og9vQfdZ7qZW4OxfOHXnWnzu/bUmnbDtosY9W2g172Lz1BaQe9B0FjMP7QyeZ56SZA0CgcxxaH5Fl8DwSNwtgjd3oz9UFQEA2CgmgQFESDoCAaBAXRICiIBkFBNAgKokFQEA2CgmgQFESDoCAaBAXRICiIBkFBNAgKokFQEA2CgmgQFESDoCAaBAXR/B9O8hQtnYqjKgAAAABJRU5ErkJggg==" /><!-- --></p>
+</div>
+<div id="measures" class="section level2">
+<h2>Measures</h2>
+<p><code>differential_stream()</code> adds per-reading differences and
+rates, and <code>summarise_stream()</code> the course-level measures,
+here before and after the pipeline:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>cols <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;distance_2d&quot;</span>, <span class="st">&quot;elevation_gain&quot;</span>, <span class="st">&quot;elevation_loss&quot;</span>, <span class="st">&quot;km_effort&quot;</span>, <span class="st">&quot;resolution&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">stream =</span> <span class="fu">c</span>(<span class="st">&quot;raw&quot;</span>, <span class="st">&quot;pipeline&quot;</span>),</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>      <span class="fu">rbind</span>(<span class="fu">summarise_stream</span>(raw)[, cols], <span class="fu">summarise_stream</span>(final)[, cols]))</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt;     stream distance_2d elevation_gain elevation_loss km_effort resolution</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; 1      raw    7847.284       889.2000       875.4000  16.73928   3.127654</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; 2 pipeline    7280.702       950.9853       945.9306  16.79056   6.164862</span></span></code></pre></div>
+<div id="tobler-parameters" class="section level3">
+<h3>Tobler parameters</h3>
+<p><code>tobler_stream()</code> fits an asymmetric Tobler hiking
+function to the speed-slope relation. It models the frontier of
+performance (by default the 0.9 quantile of speed), not the mean, by
+minimising the quantile loss.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>params <span class="ot">=</span> <span class="fu">tobler_stream</span>(final)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>params</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 8</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt;      v1    m1 c_plus c_minus   tau     n    r1 method </span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;chr&gt;  </span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; 1  3.30 0.148   3.40 -0.0248   0.9  1083 0.236 pinball</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>d <span class="ot">=</span> <span class="fu">differential_stream</span>(final)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>keep <span class="ot">=</span> <span class="fu">is.finite</span>(d<span class="sc">$</span>speed) <span class="sc">&amp;</span> <span class="fu">is.finite</span>(d<span class="sc">$</span>slope) <span class="sc">&amp;</span> <span class="fu">abs</span>(d<span class="sc">$</span>slope) <span class="sc">&lt;=</span> <span class="fl">0.6</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="fu">plot</span>(d<span class="sc">$</span>slope[keep], d<span class="sc">$</span>speed[keep], <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.4</span>, <span class="at">col =</span> <span class="st">&quot;grey60&quot;</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Slope (rise over run)&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Horizontal speed (m/s)&quot;</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>slope <span class="ot">=</span> <span class="fu">seq</span>(<span class="sc">-</span><span class="fl">0.6</span>, <span class="fl">0.6</span>, <span class="at">by =</span> <span class="fl">0.01</span>)</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="fu">lines</span>(slope, <span class="fu">tobler_speed</span>(slope, params), <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>In this single activity the frontier is flat downhill
+(<code>c_minus</code> close to 0) and the speed only drops on steep
+climbs. Many activities, or a population of athletes, give a
+better-defined frontier.</p>
+</div>
+</div>
+<div id="two-streams" class="section level2">
+<h2>Two streams</h2>
+<p><code>detect_stream()</code> is a predicate: does the activity follow
+the route, in which direction, and between which readings?</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>route <span class="ot">=</span> <span class="fu">read_stream</span>(route_file)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">detect_stream</span>(raw, route)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 6</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt;    pass start_row end_row direction coverage status</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt;     &lt;int&gt;   &lt;int&gt; &lt;chr&gt;        &lt;dbl&gt; &lt;chr&gt; </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; 1     1         1    2506 forward          1 match</span></span></code></pre></div>
+<p><code>locate_stream()</code> projects every reading on the route
+(linear referencing), and <code>compare_stream()</code> measures the
+spatial agreement of two streams resampled at the same resolution:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>located <span class="ot">=</span> <span class="fu">locate_stream</span>(clean, route)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">abs</span>(located<span class="sc">$</span>offset_cross))</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt;     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. </span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt;  0.01153  3.30181  5.52755  6.92778  8.84520 39.74600</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="fu">compare_stream</span>(<span class="fu">resample_stream</span>(clean, <span class="at">res =</span> <span class="dv">2</span>), <span class="fu">resample_stream</span>(route, <span class="at">res =</span> <span class="dv">2</span>))</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 8</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt;    dims hausdorff hausdorff_ab hausdorff_ba separation_ab separation_ba</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;        &lt;dbl&gt;         &lt;dbl&gt;         &lt;dbl&gt;</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; 1     2      40.0         40.0         33.9          5.28          5.10</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; # ℹ 2 more variables: metric_score_ab &lt;dbl&gt;, metric_score_ba &lt;dbl&gt;</span></span></code></pre></div>
+<div id="matching-to-a-known-reference" class="section level3">
+<h3>Matching to a known reference</h3>
+<p>When the athlete is known to have followed a reference trail, for
+example rounds on a trail measured with a high-precision protocol,
+<code>match_stream()</code> estimates where the athlete was along the
+reference at every timestamp. The match never moves backwards and never
+exceeds the Tobler ceiling, and the global optimum is found by dynamic
+programming. The result keeps the time and the other variables of the
+stream, takes the coordinates and elevation of the reference, and
+reports the offset of every reading along and across the trail.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>reference <span class="ot">=</span> route <span class="sc">%&gt;%</span> <span class="fu">resample_stream</span>(<span class="at">res =</span> <span class="dv">2</span>) <span class="sc">%&gt;%</span> <span class="fu">ele_correction</span>(<span class="at">dem =</span> dem_file)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>matched <span class="ot">=</span> <span class="fu">match_stream</span>(clean[<span class="dv">1</span><span class="sc">:</span><span class="dv">800</span>, ], reference, <span class="at">params =</span> params)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">attr</span>(matched, <span class="st">&quot;match_report&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 10</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt;   group direction     n vertices_used max_per_vertex vertices_over_cap</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt;   &lt;lgl&gt; &lt;chr&gt;     &lt;int&gt;         &lt;int&gt;          &lt;int&gt;             &lt;int&gt;</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; 1 NA    forward     800           497              8                72</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt; # ℹ 4 more variables: pct_at_ceiling &lt;dbl&gt;, objective &lt;dbl&gt;,</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt; #   offset_median &lt;dbl&gt;, offset_q95 &lt;dbl&gt;</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="fu">summary</span>(matched[, <span class="fu">c</span>(<span class="st">&quot;offset_d&quot;</span>, <span class="st">&quot;offset_along&quot;</span>, <span class="st">&quot;offset_cross&quot;</span>)])</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt;     offset_d        offset_along       offset_cross    </span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt;  Min.   : 0.2904   Min.   :-23.9252   Min.   :-30.416  </span></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 4.7058   1st Qu.: -1.0220   1st Qu.: -8.146  </span></span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt;  Median : 7.4410   Median :  0.2385   Median : -5.060  </span></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="co">#&gt;  Mean   : 8.4524   Mean   :  0.8401   Mean   : -5.630  </span></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:11.2321   3rd Qu.:  2.9667   3rd Qu.: -2.649  </span></span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt;  Max.   :30.8838   Max.   : 24.5885   Max.   : 10.217</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">plot</span>(matched<span class="sc">$</span>time <span class="sc">/</span> <span class="dv">60</span>, matched<span class="sc">$</span>s_ref <span class="sc">/</span> <span class="dv">1000</span>, <span class="at">type =</span> <span class="st">&quot;l&quot;</span>,</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Time (min)&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Position along the reference (km)&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="writing-the-result" class="section level2">
+<h2>Writing the result</h2>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>out <span class="ot">=</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.gpx&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">write_stream</span>(final, out, <span class="at">name =</span> <span class="st">&quot;Manquehue loop&quot;</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="fu">nrow</span>(<span class="fu">read_stream</span>(out))</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; [1] 1182</span></span></code></pre></div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li>Sanchez, R., &amp; Villena, M. (2020). Comparative evaluation of
+wearable devices for measuring elevation gain in mountain physical
+activities. <em>Proc IMechE Part P</em>, 234(4), 312-319. <a href="https://doi.org/10.1177/1754337120918975" class="uri">https://doi.org/10.1177/1754337120918975</a></li>
+<li>Sanchez, R., Egli, P., Besomi, M., &amp; Truffello, R. (2024).
+Assessing the impact of Digital Elevation Model resolution on elevation
+gain estimations in trail running. <em>ICECET 2024</em>. <a href="https://doi.org/10.1109/ICECET61485.2024.10698606" class="uri">https://doi.org/10.1109/ICECET61485.2024.10698606</a></li>
+<li>Sanchez, R., Egli, P. E., Jornet, K., Duggan, M., &amp; Besomi, M.
+(2025). How fractal complexity distorts distance and elevation gain in
+trail and mountain running. <em>Proc IMechE Part P</em>. <a href="https://doi.org/10.1177/17543371251341660" class="uri">https://doi.org/10.1177/17543371251341660</a></li>
+<li>Sanchez, R., Nieto-Jimenez, C., &amp; Riveros-Matthey, C. (2025).
+High-precision mapping of mountain terrain for human locomotion
+research. <em>ICPRS 2025</em>. <a href="https://doi.org/10.1109/ICPRS66293.2025.11302827" class="uri">https://doi.org/10.1109/ICPRS66293.2025.11302827</a></li>
+<li>Martinez, C., Sanchez, R., &amp; Diaz, C. (2026). A post-processing
+methodology for improving kinematic consistency in GNSS-based running
+trajectories. <em>ICECET 2026</em>. <a href="https://doi.org/10.1109/ICECET65726.2026.11632531" class="uri">https://doi.org/10.1109/ICECET65726.2026.11632531</a></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
